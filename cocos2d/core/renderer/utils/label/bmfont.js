@@ -81,6 +81,9 @@ export default class BmfontAssembler extends Assembler2D {
         if (!comp._vertsDirty) return;
         if (_comp === comp) return;
 
+        // for label-char¡¾from wulifun¡¿
+        this.onRecycleRef();
+        
         _comp = comp;
         
         this._reserveQuads(comp, comp.string.toString().length);
@@ -186,6 +189,21 @@ export default class BmfontAssembler extends Assembler2D {
             horizontalKernings.length = 0;
         }
     }
+    
+    // for label-char¡¾from wulifun¡¿
+    _refLetters = [];
+    onRecycleRef() {
+        if (this._refLetters.length < 1) {
+            return;
+        }
+        for (let i = this._refLetters.length - 1; i >= 0; --i) {
+            let letterDef = shareLabelInfo.fontAtlas.getLetter(this._refLetters[i]);
+            if (letterDef) {
+                letterDef.refCount--;
+            }
+        }
+        this._refLetters.length = 0;
+    }
 
     _multilineTextWrap (nextTokenFunc) {
         let textLen = _string.length;
@@ -229,6 +247,11 @@ export default class BmfontAssembler extends Assembler2D {
                     continue;
                 }
                 letterDef = shareLabelInfo.fontAtlas.getLetterDefinitionForChar(character, shareLabelInfo);
+                // for label-char¡¾from wulifun¡¿
+                if (letterDef && letterDef.hash) {
+                    letterDef.refCount++;
+                    this._refLetters.push(letterDef.hash);
+                }
                 if (!letterDef) {
                     this._recordPlaceholderInfo(letterIndex, character);
                     let atlasName = "";

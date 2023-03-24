@@ -18,6 +18,9 @@ export default class Assembler {
     getVfmt () {
         return vfmtPosUvColor;
     }
+    // for label-char¡¾from wulifun¡¿
+    onRecycleRef() {
+    }
 }
 
 

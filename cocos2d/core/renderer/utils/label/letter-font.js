@@ -43,6 +43,8 @@ const space = 0;
 const bleed = 2;
 const _invisibleAlpha = (1 / 255).toFixed(3);
 
+let _notUsedLetters = [];
+
 function LetterTexture(char, labelInfo) {
     this._texture = null;
     this._labelInfo = labelInfo;
@@ -64,6 +66,18 @@ LetterTexture.prototype = {
         this._updateProperties();
         this._updateTexture();
     },
+    
+    // for label-char【from wulifun】
+    calcCharSize (char, labelInfo) {
+        let _context = Label._canvasPool.get().context;
+        let width = textUtils.safeMeasureText(_context, char, labelInfo.fontDesc);
+        let blank = labelInfo.margin * 2 + bleed;
+        let _width = parseFloat(width.toFixed(2)) + blank;
+        let _height = (1 + textUtils.BASELINE_RATIO) * labelInfo.fontSize + blank;
+    
+        return [_width, _height];
+    },
+    
     _updateProperties () {
         this._texture = new cc.Texture2D();
         this._data = Label._canvasPool.get();
@@ -138,7 +152,10 @@ function LetterAtlas (width, height) {
 
     this._width = width;
     this._height = height;
-
+    
+    // for label-char【from wulifun】
+    this._safeHeight = parseInt(height * 0.8);
+    
     cc.director.on(cc.Director.EVENT_BEFORE_SCENE_LAUNCH, this.beforeSceneLoad, this);
 }
 
@@ -175,10 +192,18 @@ cc.js.mixin(LetterAtlas.prototype, {
         letter.offsetY = letterTexture._offsetY;
 
         this._x += width + space;
+        
+
+        // for label-char【from wulifun】
+        letter.originW = letterTexture._width;
+        letter.originH = letterTexture._height;
+        letter.hash = letterTexture._hash;
+        letter.refCount = 0;
+        _notUsedLetters.push(letter);
 
         this._fontDefDictionary.addLetterDefinitions(letterTexture._hash, letter);
         
-        return letter
+        return letter;
     },
 
     update () {
@@ -222,6 +247,9 @@ cc.js.mixin(LetterAtlas.prototype, {
         texture.update();
         
         this._fontDefDictionary._texture = texture;
+        
+        // for label-char【from wulifun】
+        _notUsedLetters = [];
     },
 
     getLetter (key) {
@@ -232,14 +260,111 @@ cc.js.mixin(LetterAtlas.prototype, {
         return this._fontDefDictionary.getTexture();
     },
 
+    // for label-char【from wulifun】
+    calcCharSize (char, labelInfo) {
+        let _context = Label._canvasPool.get().context;
+        _context.font = labelInfo.fontDesc;
+        let width = textUtils.safeMeasureText(_context, char, labelInfo.fontDesc);
+        let blank = labelInfo.margin * 2 + bleed;
+        let _width = parseFloat(width.toFixed(2)) + blank;
+        let _height = (1 + textUtils.BASELINE_RATIO) * labelInfo.fontSize + blank;
+
+        return [_width, _height];
+    },
+
+    canInsertChar(char, labelInfo, force) {
+        let arr = this.calcCharSize(char, labelInfo);
+        let width = arr[0];
+        let height = arr[1];
+        let nextY = this._nexty;
+        let thisY = this._y;
+
+        if ((this._x + width + space) > this._width) {
+            thisY = this._nexty;
+        }
+
+        if ((thisY + height) > nextY) {
+            nextY = thisY + height + space;
+        }
+
+        let maxY = force ? this._height : this._safeHeight;
+        if (nextY > maxY) {
+            return false;
+        }
+
+        return true;
+    },
+
+    findNotUsedLetter (char, labelInfo) {
+        let arr = this.calcCharSize(char, labelInfo);
+        let width = arr[0];
+        let height = arr[1];
+
+        for (let i = 0; i < _notUsedLetters.length; i++) {
+            const letter = _notUsedLetters[i];
+            if (letter.refCount == 0 && letter.originW >= width && letter.originH >= height) {
+                return letter;
+            }
+        }
+
+        return null;
+    },
+
+    replaceLetterToOldTexture (oldLetter, newLetterTexture) {
+        let oldHash = oldLetter.hash;
+        let texture = newLetterTexture._texture;
+
+        this._fontDefDictionary._texture.drawTextureAt(texture, oldLetter.u - bleed/2, oldLetter.v - bleed/2);
+        oldLetter.hash = newLetterTexture._hash;
+        oldLetter.w = newLetterTexture._width - bleed;
+        oldLetter.h = newLetterTexture._height - bleed;
+        oldLetter.offsetY = newLetterTexture._offsetY;
+        oldLetter.refCount = 0;
+
+        this._dirty = true;
+
+        this._fontDefDictionary.addLetterDefinitions(newLetterTexture._hash, oldLetter);
+        delete this._fontDefDictionary._letterDefinitions[oldHash];
+
+        return oldLetter;
+    },
+
+    insertNexLetterTexture(char, labelInfo) {
+        let temp = new LetterTexture(char, labelInfo);
+        temp.updateRenderData();
+        let letter = this.insertLetterTexture(temp);
+        temp.destroy();
+
+        return letter;
+     },
+
     getLetterDefinitionForChar: function(char, labelInfo) {
         let hash = char.charCodeAt(0) + labelInfo.hash;
         let letter = this._fontDefDictionary._letterDefinitions[hash];
         if (!letter) {
-            let temp = new LetterTexture(char, labelInfo);
-            temp.updateRenderData();
-            letter = this.insertLetterTexture(temp);
-            temp.destroy();
+            // for label-char【from wulifun】
+            if (this.canInsertChar(char, labelInfo)) {
+                // console.log('查找安全空间正常写入，总数：', _notUsedLetters.length);
+                letter = this.insertNexLetterTexture(char, labelInfo);
+            } else {
+                // 查找废弃空间并替换
+                let old = this.findNotUsedLetter(char, labelInfo);
+                if (old) {
+                    // console.log(_notUsedLetters.length, '查找废弃空间并替换=', char);
+                    let temp2 = new LetterTexture(char, labelInfo);
+                    temp2.updateRenderData();
+                    letter = this.replaceLetterToOldTexture(old, temp2);
+                    temp2.destroy();
+                } else {
+                    // 强制写进保留空间
+                    if (this.canInsertChar(char, labelInfo, true)) {
+                        // console.log('强制写进保留空间成功');
+                        letter = this.insertNexLetterTexture(char, labelInfo);
+                    } else {
+                        console.warn('Label（Char-Mode）全局共享图集已满，请检查界面是否存在不规范使用。');
+                    }
+                }
+            }
         }
 
         return letter;
