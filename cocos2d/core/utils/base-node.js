@@ -401,8 +401,44 @@ var BaseNode = cc.Class({
         else if (value) {
             this._onHierarchyChanged(null);
         }
+        
+        // for drawcall【from wulifun】
+        this.reorderChildren_bfs(this._parent);
     },
 
+    // for drawcall【from wulifun】
+    reorderChildren_bfs(parent, delChild) {
+        if (!parent) return;
+        let _enableBfsRender = parent['enableBfsRender'];
+        if (!_enableBfsRender) return;
+
+        // 直接每次遍历conten下子节点，改成bfs顺序
+        let _batchChildren = _enableBfsRender;
+        if (delChild) {
+            for (let i = 0; i < _batchChildren.length; i++) {
+                _batchChildren[i]._customZOrder = undefined;
+            }
+        }
+        _batchChildren.length = 0;
+
+        const setCustomZOrder = (child, args) => {
+            if (delChild && delChild.uuid == child.uuid) return;
+            child._customZOrder = args.order++;
+            _batchChildren.push(child);
+            for (let i = 0; i < child._children.length; i++) {
+                setCustomZOrder(child._children[i], args);
+            }
+        };
+        for (let i = 0; i < parent._children.length; i++) {
+            let args = {};
+            args.order = 1;
+            setCustomZOrder(parent._children[i], args);
+        }
+        _batchChildren.sort((a, b) => {
+            return a._customZOrder - b._customZOrder;
+        });
+    },
+    
     // ABSTRACT INTERFACES
 
     /**
@@ -708,6 +744,9 @@ var BaseNode = cc.Class({
      */
     removeChild (child, cleanup) {
         if (this._children.indexOf(child) > -1) {
+            // for drawcall【from wulifun】
+            this.reorderChildren_bfs(child.parent, child);
+            
             // If you don't do cleanup, the child's actions will not get removed and the
             if (cleanup || cleanup === undefined) {
                 child.cleanup();
@@ -1085,6 +1124,9 @@ var BaseNode = cc.Class({
         if (cc.Object.prototype.destroy.call(this)) {
             this.active = false;
         }
+        
+        // for drawcall【from wulifun】
+        this.reorderChildren_bfs(this._parent, this);
     },
 
     /**

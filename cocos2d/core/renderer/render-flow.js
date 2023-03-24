@@ -93,10 +93,26 @@ _proto._children = function (node) {
     let worldOpacityFlag = batcher.parentOpacityDirty ? OPACITY_COLOR : 0;
     let worldDirtyFlag = worldTransformFlag | worldOpacityFlag;
 
-    let children = node._children;
+    // for drawcall【from wulifun】
+    let children = [];
+    let useCustomRender = false;
+    let _enableBfsRender = node['enableBfsRender'];
+    if (_enableBfsRender && _enableBfsRender.length > 0) {
+        useCustomRender = true;
+        children = _enableBfsRender;
+    } else if (!node._customZOrder) {
+        children = node._children;
+    }
+    
     for (let i = 0, l = children.length; i < l; i++) {
         let c = children[i];
 
+        if (useCustomRender) {
+            c._renderFlag |= WORLD_TRANSFORM;
+            c._renderFlag &= ~CHILDREN;
+            opacity = c.parent._opacity / 255;
+        }
+        
         // Advance the modification of the flag to avoid node attribute modification is invalid when opacity === 0.
         c._renderFlag |= worldDirtyFlag;
         if (!c._activeInHierarchy || c._opacity === 0) continue;
@@ -108,6 +124,10 @@ _proto._children = function (node) {
         c._color._fastSetA(c._opacity * opacity);
         flows[c._renderFlag]._func(c);
         c._color._val = colorVal;
+        
+        if (useCustomRender) {
+            c._renderFlag |= CHILDREN;
+        }
     }
 
     batcher.parentOpacity = parentOpacity;
