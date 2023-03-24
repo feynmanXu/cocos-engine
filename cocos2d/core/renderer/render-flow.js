@@ -96,14 +96,14 @@ _proto._children = function (node) {
     // for drawcall【from wulifun】
     let children = [];
     let useCustomRender = false;
-    let _enableBfsRender = node['enableBfsRender'];
-    if (_enableBfsRender && _enableBfsRender.length > 0) {
+    let _batchChildren = node.batchChildren;
+    if (_batchChildren && _batchChildren.length > 0) {
         useCustomRender = true;
-        children = _enableBfsRender;
+        children = _batchChildren;
     } else if (!node._customZOrder) {
         children = node._children;
     }
-    
+
     for (let i = 0, l = children.length; i < l; i++) {
         let c = children[i];
 
@@ -112,7 +112,7 @@ _proto._children = function (node) {
             c._renderFlag &= ~CHILDREN;
             opacity = c.parent._opacity / 255;
         }
-        
+
         // Advance the modification of the flag to avoid node attribute modification is invalid when opacity === 0.
         c._renderFlag |= worldDirtyFlag;
         if (!c._activeInHierarchy || c._opacity === 0) continue;
@@ -124,7 +124,7 @@ _proto._children = function (node) {
         c._color._fastSetA(c._opacity * opacity);
         flows[c._renderFlag]._func(c);
         c._color._val = colorVal;
-        
+
         if (useCustomRender) {
             c._renderFlag |= CHILDREN;
         }
@@ -152,15 +152,15 @@ function createFlow (flag, next) {
     if (flag === DONOTHING || flag === BREAK_FLOW) {
         return EMPTY_FLOW
     }
-    
+
     let flow = new RenderFlow();
     flow._next = next || EMPTY_FLOW;
 
     switch (flag) {
-        case LOCAL_TRANSFORM: 
+        case LOCAL_TRANSFORM:
             flow._func = flow._localTransform;
             break;
-        case WORLD_TRANSFORM: 
+        case WORLD_TRANSFORM:
             flow._func = flow._worldTransform;
             break;
         case UPDATE_RENDER_DATA:
@@ -172,13 +172,13 @@ function createFlow (flag, next) {
         case COLOR:
             flow._func = flow._color;
             break;
-        case RENDER: 
+        case RENDER:
             flow._func = flow._render;
             break;
-        case CHILDREN: 
+        case CHILDREN:
             flow._func = flow._children;
             break;
-        case POST_RENDER: 
+        case POST_RENDER:
             flow._func = flow._postRender;
             break;
     }
@@ -197,7 +197,7 @@ function getFlow (flag) {
     return flow;
 }
 
-// 
+//
 function init (node) {
     let flag = node._renderFlag;
     let r = flows[flag] = getFlow(flag);
@@ -231,7 +231,7 @@ RenderFlow.validateRenderers = function () {
 
 
 RenderFlow.visitRootNode = function (rootNode) {
-    RenderFlow.validateRenderers();    
+    RenderFlow.validateRenderers();
 
     let preCullingMask = _cullingMask;
     _cullingMask = rootNode._cullingMask;

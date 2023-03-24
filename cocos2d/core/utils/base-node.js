@@ -33,7 +33,7 @@ const RenderFlow = require('../renderer/render-flow');
 
 const Destroying = Flags.Destroying;
 const DontDestroy = Flags.DontDestroy;
-const Deactivating = Flags.Deactivating; 
+const Deactivating = Flags.Deactivating;
 
 const CHILD_ADDED = 'child-added';
 const CHILD_REMOVED = 'child-removed';
@@ -329,11 +329,11 @@ var BaseNode = cc.Class({
          */
         this.__eventTargets = [];
     },
-    /** 
+    /**
      * !#en The parent of the node.
      * !#zh 该节点的父节点。
      * @property {Node} parent
-     * @example 
+     * @example
      * cc.log("Node Parent: " + node.parent);
      */
 
@@ -401,23 +401,39 @@ var BaseNode = cc.Class({
         else if (value) {
             this._onHierarchyChanged(null);
         }
-        
+
         // for drawcall【from wulifun】
         this.reorderChildren_bfs(this._parent);
     },
 
     // for drawcall【from wulifun】
+    enableBfsRender(value) {
+        if (!value) {
+            this.clearChildren_bfs(this.batchChildren);
+            this.batchChildren = undefined;
+        } else {
+            this.batchChildren = [];
+            this.reorderChildren_bfs(this);
+        }
+    },
+
+    // for drawcall【from wulifun】
+    clearChildren_bfs(_batchChildren) {
+        if (!_batchChildren || !(_batchChildren instanceof Array)) return;
+
+        for (let i = 0; i < _batchChildren.length; i++) {
+            _batchChildren[i]._customZOrder = undefined;
+        }
+    },
+
+    // for drawcall【from wulifun】
     reorderChildren_bfs(parent, delChild) {
         if (!parent) return;
-        let _enableBfsRender = parent['enableBfsRender'];
-        if (!_enableBfsRender) return;
+        let _batchChildren = parent.batchChildren;
+        if (!_batchChildren || !(_batchChildren instanceof Array)) return;
 
-        // 直接每次遍历conten下子节点，改成bfs顺序
-        let _batchChildren = _enableBfsRender;
         if (delChild) {
-            for (let i = 0; i < _batchChildren.length; i++) {
-                _batchChildren[i]._customZOrder = undefined;
-            }
+            this.clearChildren_bfs(_batchChildren);
         }
         _batchChildren.length = 0;
 
@@ -438,7 +454,7 @@ var BaseNode = cc.Class({
             return a._customZOrder - b._customZOrder;
         });
     },
-    
+
     // ABSTRACT INTERFACES
 
     /**
@@ -637,7 +653,7 @@ var BaseNode = cc.Class({
                 // post call
                 postfunc(curr);
             }
-            
+
             // Avoid memory leak
             stack[index] = null;
             // Do not repeatly visit child tree, just do post call and continue walk
@@ -746,7 +762,7 @@ var BaseNode = cc.Class({
         if (this._children.indexOf(child) > -1) {
             // for drawcall【from wulifun】
             this.reorderChildren_bfs(child.parent, child);
-            
+
             // If you don't do cleanup, the child's actions will not get removed and the
             if (cleanup || cleanup === undefined) {
                 child.cleanup();
@@ -1124,7 +1140,7 @@ var BaseNode = cc.Class({
         if (cc.Object.prototype.destroy.call(this)) {
             this.active = false;
         }
-        
+
         // for drawcall【from wulifun】
         this.reorderChildren_bfs(this._parent, this);
     },
