@@ -430,7 +430,12 @@ var BaseNode = cc.Class({
     reorderChildren_bfs(parent, delChild) {
         if (!parent) return;
         let _batchChildren = parent.batchChildren;
-        if (!_batchChildren || !(_batchChildren instanceof Array)) return;
+        if (!_batchChildren || !(_batchChildren instanceof Array)) {
+            if (parent._customZOrder && parent._parent) {
+                this.reorderChildren_bfs(parent._parent);
+            }
+            return;
+        }
 
         if (delChild) {
             this.clearChildren_bfs(_batchChildren);
