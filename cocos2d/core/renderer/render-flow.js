@@ -95,11 +95,8 @@ _proto._children = function (node) {
 
     // for drawcall【from wulifun】
     let children = [];
-    let useCustomRender = false;
-    let _batchChildren = node.batchChildren;
-    if (_batchChildren && _batchChildren.length > 0) {
-        useCustomRender = true;
-        children = _batchChildren;
+    if (node._openBatchRender) {
+        children = node.batchChildren;
     } else if (!node._customZOrder) {
         children = node._children;
     }
@@ -107,7 +104,8 @@ _proto._children = function (node) {
     for (let i = 0, l = children.length; i < l; i++) {
         let c = children[i];
 
-        if (useCustomRender) {
+        // for drawcall【from wulifun】
+        if (node._openBatchRender) {
             c._renderFlag |= WORLD_TRANSFORM;
             c._renderFlag &= ~CHILDREN;
             opacity = c.parent._opacity / 255;
@@ -125,7 +123,8 @@ _proto._children = function (node) {
         flows[c._renderFlag]._func(c);
         c._color._val = colorVal;
 
-        if (useCustomRender) {
+        // for drawcall【from wulifun】
+        if (node._openBatchRender) {
             c._renderFlag |= CHILDREN;
         }
     }

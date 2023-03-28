@@ -403,59 +403,54 @@ var BaseNode = cc.Class({
         }
 
         // for drawcall【from wulifun】
-        this.reorderChildren_bfs(this._parent);
+        if (this._parent) this._parent.reorderChildren_bfs();
     },
 
     // for drawcall【from wulifun】
     enableBfsRender(value) {
+        this._openBatchRender = value;
         if (!value) {
-            this.clearChildren_bfs(this.batchChildren);
-            this.batchChildren = undefined;
+            this.clearChildren_bfs();
         } else {
-            this.batchChildren = [];
-            this.reorderChildren_bfs(this);
+            this.reorderChildren_bfs();
         }
     },
 
     // for drawcall【from wulifun】
-    clearChildren_bfs(_batchChildren) {
-        if (!_batchChildren || !(_batchChildren instanceof Array)) return;
-
-        for (let i = 0; i < _batchChildren.length; i++) {
-            _batchChildren[i]._customZOrder = undefined;
+    clearChildren_bfs() {
+        if (!this.batchChildren) return;
+        for (let i = 0; i < this.batchChildren.length; i++) {
+            this.batchChildren[i]._customZOrder = undefined;
         }
+        this.batchChildren = undefined;
     },
 
     // for drawcall【from wulifun】
-    reorderChildren_bfs(parent, delChild) {
-        if (!parent) return;
-        let _batchChildren = parent.batchChildren;
-        if (!_batchChildren || !(_batchChildren instanceof Array)) {
-            if (parent._customZOrder && parent._parent) {
-                this.reorderChildren_bfs(parent._parent);
+    reorderChildren_bfs(delChild) {
+        if (!this._openBatchRender) {
+            if (this._customZOrder && this._parent) {
+                this._parent.reorderChildren_bfs(delChild);
             }
             return;
         }
 
-        if (delChild) {
-            this.clearChildren_bfs(_batchChildren);
-        }
-        _batchChildren.length = 0;
+        this.clearChildren_bfs();
 
+        this.batchChildren = [];
         const setCustomZOrder = (child, args) => {
             if (delChild && delChild.uuid == child.uuid) return;
             child._customZOrder = args.order++;
-            _batchChildren.push(child);
+            this.batchChildren.push(child);
             for (let i = 0; i < child._children.length; i++) {
                 setCustomZOrder(child._children[i], args);
             }
         };
-        for (let i = 0; i < parent._children.length; i++) {
+        for (let i = 0; i < this._children.length; i++) {
             let args = {};
             args.order = 1;
-            setCustomZOrder(parent._children[i], args);
+            setCustomZOrder(this._children[i], args);
         }
-        _batchChildren.sort((a, b) => {
+        this.batchChildren.sort((a, b) => {
             return a._customZOrder - b._customZOrder;
         });
     },
@@ -766,7 +761,7 @@ var BaseNode = cc.Class({
     removeChild (child, cleanup) {
         if (this._children.indexOf(child) > -1) {
             // for drawcall【from wulifun】
-            this.reorderChildren_bfs(child.parent, child);
+            this.reorderChildren_bfs(child);
 
             // If you don't do cleanup, the child's actions will not get removed and the
             if (cleanup || cleanup === undefined) {
@@ -1147,7 +1142,7 @@ var BaseNode = cc.Class({
         }
 
         // for drawcall【from wulifun】
-        this.reorderChildren_bfs(this._parent, this);
+        if (this._parent) this._parent.reorderChildren_bfs(this);
     },
 
     /**
