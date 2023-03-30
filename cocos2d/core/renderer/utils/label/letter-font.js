@@ -66,18 +66,7 @@ LetterTexture.prototype = {
         this._updateProperties();
         this._updateTexture();
     },
-    
-    // for label-char【from wulifun】
-    calcCharSize (char, labelInfo) {
-        let _context = Label._canvasPool.get().context;
-        let width = textUtils.safeMeasureText(_context, char, labelInfo.fontDesc);
-        let blank = labelInfo.margin * 2 + bleed;
-        let _width = parseFloat(width.toFixed(2)) + blank;
-        let _height = (1 + textUtils.BASELINE_RATIO) * labelInfo.fontSize + blank;
-    
-        return [_width, _height];
-    },
-    
+
     _updateProperties () {
         this._texture = new cc.Texture2D();
         this._data = Label._canvasPool.get();
@@ -145,24 +134,24 @@ function LetterAtlas (width, height) {
     texture.update();
 
     this._fontDefDictionary = new FontAtlas(texture);
-    
+
     this._x = space;
     this._y = space;
     this._nexty = space;
 
     this._width = width;
     this._height = height;
-    
-    // for label-char【from wulifun】
+
+    // for label-char[from wulifun]
     this._safeHeight = parseInt(height * 0.8);
-    
+
     cc.director.on(cc.Director.EVENT_BEFORE_SCENE_LAUNCH, this.beforeSceneLoad, this);
 }
 
 cc.js.mixin(LetterAtlas.prototype, {
     insertLetterTexture (letterTexture) {
         let texture = letterTexture._texture;
-        let width = texture.width, height = texture.height;        
+        let width = texture.width, height = texture.height;
 
         if ((this._x + width + space) > this._width) {
             this._x = space;
@@ -180,7 +169,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         this._fontDefDictionary._texture.drawTextureAt(texture, this._x, this._y);
 
         this._dirty = true;
-        
+
         let letter = new FontLetterDefinition();
         letter.u = this._x + bleed/2;
         letter.v = this._y + bleed/2;
@@ -192,9 +181,9 @@ cc.js.mixin(LetterAtlas.prototype, {
         letter.offsetY = letterTexture._offsetY;
 
         this._x += width + space;
-        
 
-        // for label-char【from wulifun】
+
+        // for label-char[from wulifun]
         letter.originW = letterTexture._width;
         letter.originH = letterTexture._height;
         letter.hash = letterTexture._hash;
@@ -202,7 +191,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         _notUsedLetters.push(letter);
 
         this._fontDefDictionary.addLetterDefinitions(letterTexture._hash, letter);
-        
+
         return letter;
     },
 
@@ -245,10 +234,10 @@ cc.js.mixin(LetterAtlas.prototype, {
         let texture = new RenderTexture();
         texture.initWithSize(this._width, this._height);
         texture.update();
-        
+
         this._fontDefDictionary._texture = texture;
-        
-        // for label-char【from wulifun】
+
+        // for label-char[from wulifun]
         _notUsedLetters = [];
     },
 
@@ -260,7 +249,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         return this._fontDefDictionary.getTexture();
     },
 
-    // for label-char【from wulifun】
+    // for label-char[from wulifun]
     calcCharSize (char, labelInfo) {
         let _context = Label._canvasPool.get().context;
         _context.font = labelInfo.fontDesc;
@@ -272,6 +261,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         return [_width, _height];
     },
 
+    // for label-char[from wulifun]
     canInsertChar(char, labelInfo, force) {
         let arr = this.calcCharSize(char, labelInfo);
         let width = arr[0];
@@ -295,6 +285,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         return true;
     },
 
+    // for label-char[from wulifun]
     findNotUsedLetter (char, labelInfo) {
         let arr = this.calcCharSize(char, labelInfo);
         let width = arr[0];
@@ -310,6 +301,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         return null;
     },
 
+    // for label-char[from wulifun]
     replaceLetterToOldTexture (oldLetter, newLetterTexture) {
         let oldHash = oldLetter.hash;
         let texture = newLetterTexture._texture;
@@ -329,6 +321,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         return oldLetter;
     },
 
+    // for label-char[from wulifun]
     insertNexLetterTexture(char, labelInfo) {
         let temp = new LetterTexture(char, labelInfo);
         temp.updateRenderData();
@@ -342,26 +335,21 @@ cc.js.mixin(LetterAtlas.prototype, {
         let hash = char.charCodeAt(0) + labelInfo.hash;
         let letter = this._fontDefDictionary._letterDefinitions[hash];
         if (!letter) {
-            // for label-char【from wulifun】
+            // for label-char[from wulifun]
             if (this.canInsertChar(char, labelInfo)) {
-                // console.log('查找安全空间正常写入，总数：', _notUsedLetters.length);
                 letter = this.insertNexLetterTexture(char, labelInfo);
             } else {
-                // 查找废弃空间并替换
                 let old = this.findNotUsedLetter(char, labelInfo);
                 if (old) {
-                    // console.log(_notUsedLetters.length, '查找废弃空间并替换=', char);
                     let temp2 = new LetterTexture(char, labelInfo);
                     temp2.updateRenderData();
                     letter = this.replaceLetterToOldTexture(old, temp2);
                     temp2.destroy();
                 } else {
-                    // 强制写进保留空间
                     if (this.canInsertChar(char, labelInfo, true)) {
-                        // console.log('强制写进保留空间成功');
                         letter = this.insertNexLetterTexture(char, labelInfo);
                     } else {
-                        console.warn('Label（Char-Mode）全局共享图集已满，请检查界面是否存在不规范使用。');
+                        console.warn('Insert char failed');
                     }
                 }
             }
@@ -378,7 +366,7 @@ function computeHash (labelInfo) {
     if (labelInfo.isOutlined && labelInfo.margin > 0) {
         out = out + labelInfo.margin + labelInfo.out.toHEX();
     }
-    
+
     return hashData + labelInfo.fontSize + labelInfo.fontFamily + color + out;
 }
 
@@ -394,7 +382,7 @@ export default class LetterFontAssembler extends WebglBmfontAssembler {
             _shareAtlas = new LetterAtlas(_atlasWidth, _atlasHeight);
             cc.Label._shareAtlas = _shareAtlas;
         }
-        
+
         return _shareAtlas.getTexture();
     }
 

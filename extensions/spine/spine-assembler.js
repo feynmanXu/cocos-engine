@@ -79,6 +79,11 @@ let _x, _y, _m00, _m04, _m12, _m01, _m05, _m13;
 let _r, _g, _b, _fr, _fg, _fb, _fa, _dr, _dg, _db, _da;
 let _comp, _buffer, _renderer, _node, _needColor, _vertexEffect;
 
+// for multiAltas [from wulifun]
+let _textureIdx = 0;
+// 1表示开启，借用染色模式下color.a值
+let _useMultiAtlasFlag = 0;
+
 function _getSlotMaterial (tex, blendMode) {
     let src, dst;
     switch (blendMode) {
@@ -107,6 +112,15 @@ function _getSlotMaterial (tex, blendMode) {
 
     // The key use to find corresponding material
     let key = tex.getId() + src + dst + _useTint + useModel;
+
+    // for multiAltas [from wulifun]
+    if (_useTint &&_useMultiAtlasFlag < 1) {
+        _useMultiAtlasFlag = baseMaterial.getProperty('useMultiAtlas') || 2;
+    }
+    if (_useTint && _useMultiAtlasFlag == 1) {
+        key = src + dst + _useTint + useModel;
+    }
+
     let materialCache = _comp._materialCache;
     let material = materialCache[key];
     if (!material) {
@@ -122,6 +136,11 @@ function _getSlotMaterial (tex, blendMode) {
         // update texture
         material.setProperty('texture', tex);
 
+        // for multiAltas [from wulifun]
+        if (_useTint && _useMultiAtlasFlag == 1) {
+            material.define('PREMULTIPLIED_ALPHA', _premultipliedAlpha);
+        }
+
         // update blend function
         material.setBlend(
             true,
@@ -132,6 +151,21 @@ function _getSlotMaterial (tex, blendMode) {
         );
         materialCache[key] = material;
     }
+
+    // for multiAltas [from wulifun]
+    if (_useTint && _useMultiAtlasFlag == 1) {
+        !_comp.textures && (_comp.textures = {})
+        let texId = tex.getId();
+        if (_comp.textures[texId] == undefined) {
+            let idx = Object.keys(_comp.textures).length;
+            _comp.textures[texId] = idx;
+            Object.values(materialCache).forEach(mat => {
+                mat.setProperty('texture' + (idx == 0 ? '' : idx), tex);
+            });
+        }
+        _textureIdx = _comp.textures[texId];
+    }
+
     return material;
 }
 
@@ -193,6 +227,11 @@ export default class SpineAssembler extends Assembler {
             _darkColor.b = slot.darkColor.b * _tempb;
         }
         _darkColor.a = _premultipliedAlpha ? 255 : 0;
+
+        // for multiAltas [from wulifun]
+        if (_useTint && _useMultiAtlasFlag == 1) {
+            _darkColor.a = _textureIdx;
+        }
 
         if (!clipper.isClipping()) {
             if (_vertexEffect) {
