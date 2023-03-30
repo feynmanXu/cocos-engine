@@ -93,7 +93,7 @@ _proto._children = function (node) {
     let worldOpacityFlag = batcher.parentOpacityDirty ? OPACITY_COLOR : 0;
     let worldDirtyFlag = worldTransformFlag | worldOpacityFlag;
 
-    // for drawcall【from wulifun】
+    // for drawcall[from wulifun]
     let children = [];
     if (node._openBatchRender) {
         children = node.batchChildren;
@@ -104,7 +104,7 @@ _proto._children = function (node) {
     for (let i = 0, l = children.length; i < l; i++) {
         let c = children[i];
 
-        // for drawcall【from wulifun】
+        // for drawcall[from wulifun]
         if (node._openBatchRender) {
             c._renderFlag |= WORLD_TRANSFORM;
             c._renderFlag &= ~CHILDREN;
@@ -123,7 +123,7 @@ _proto._children = function (node) {
         flows[c._renderFlag]._func(c);
         c._color._val = colorVal;
 
-        // for drawcall【from wulifun】
+        // for drawcall[from wulifun]
         if (node._openBatchRender) {
             c._renderFlag |= CHILDREN;
         }

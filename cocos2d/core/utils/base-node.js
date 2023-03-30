@@ -402,11 +402,11 @@ var BaseNode = cc.Class({
             this._onHierarchyChanged(null);
         }
 
-        // for drawcall【from wulifun】
+        // for drawcall[from wulifun]
         if (this._parent) this._parent.reorderChildren_bfs();
     },
 
-    // for drawcall【from wulifun】
+    // for drawcall[from wulifun]
     enableBfsRender(value) {
         this._openBatchRender = value;
         if (!value) {
@@ -416,7 +416,7 @@ var BaseNode = cc.Class({
         }
     },
 
-    // for drawcall【from wulifun】
+    // for drawcall[from wulifun]
     clearChildren_bfs() {
         if (!this.batchChildren) return;
         for (let i = 0; i < this.batchChildren.length; i++) {
@@ -425,7 +425,7 @@ var BaseNode = cc.Class({
         this.batchChildren = undefined;
     },
 
-    // for drawcall【from wulifun】
+    // for drawcall[from wulifun]
     reorderChildren_bfs(delChild) {
         if (!this._openBatchRender) {
             if (this._customZOrder && this._parent) {
@@ -760,7 +760,7 @@ var BaseNode = cc.Class({
      */
     removeChild (child, cleanup) {
         if (this._children.indexOf(child) > -1) {
-            // for drawcall【from wulifun】
+            // for drawcall[from wulifun]
             this.reorderChildren_bfs(child);
 
             // If you don't do cleanup, the child's actions will not get removed and the
@@ -1141,7 +1141,7 @@ var BaseNode = cc.Class({
             this.active = false;
         }
 
-        // for drawcall【from wulifun】
+        // for drawcall[from wulifun]
         if (this._parent) this._parent.reorderChildren_bfs(this);
     },
 

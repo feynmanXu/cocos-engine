@@ -108,7 +108,7 @@ let RenderComponent = cc.Class({
     },
 
     onDestroy () {
-        // for label-char【from wulifun】
+        // for label-char[from wulifun]
         this._assembler && this._assembler.onRecycleRef && this._assembler.onRecycleRef();
 
         let materials = this._materials;

@@ -81,18 +81,18 @@ export default class BmfontAssembler extends Assembler2D {
         if (!comp._vertsDirty) return;
         if (_comp === comp) return;
 
-        // for label-char¡¾from wulifun¡¿
+        // for label-char[from wulifun]
         this.onRecycleRef();
-        
+
         _comp = comp;
-        
+
         this._reserveQuads(comp, comp.string.toString().length);
         this._updateFontFamily(comp);
         this._updateProperties(comp);
         this._updateLabelInfo(comp);
         this._updateContent();
         this.updateWorldVerts(comp);
-        
+
         _comp._actualFontSize = _fontSize;
         _comp.node.setContentSize(_contentSize);
 
@@ -129,7 +129,7 @@ export default class BmfontAssembler extends Assembler2D {
         _spacingX = comp.spacingX;
         _overflow = comp.overflow;
         _lineHeight = comp._lineHeight;
-        
+
         _contentSize.width = comp.node.width;
         _contentSize.height = comp.node.height;
 
@@ -146,7 +146,7 @@ export default class BmfontAssembler extends Assembler2D {
         else {
             _isWrapText = comp.enableWrapText;
         }
-        
+
         shareLabelInfo.lineHeight = _lineHeight;
         shareLabelInfo.fontSize = _fontSize;
 
@@ -189,8 +189,8 @@ export default class BmfontAssembler extends Assembler2D {
             horizontalKernings.length = 0;
         }
     }
-    
-    // for label-char¡¾from wulifun¡¿
+
+    // for label-char[from wulifun]
     _refLetters = [];
     onRecycleRef() {
         if (this._refLetters.length < 1) {
@@ -247,7 +247,7 @@ export default class BmfontAssembler extends Assembler2D {
                     continue;
                 }
                 letterDef = shareLabelInfo.fontAtlas.getLetterDefinitionForChar(character, shareLabelInfo);
-                // for label-char¡¾from wulifun¡¿
+                // for label-char[from wulifun]
                 if (letterDef && letterDef.hash) {
                     letterDef.refCount++;
                     this._refLetters.push(letterDef.hash);
@@ -341,7 +341,7 @@ export default class BmfontAssembler extends Assembler2D {
             if (highestY > 0) {
                 _tailoredTopY = _contentSize.height + highestY;
             }
-    
+
             if (lowestY < -_textDesiredHeight) {
                 _tailoredBottomY = _textDesiredHeight + lowestY;
             }
@@ -486,7 +486,7 @@ export default class BmfontAssembler extends Assembler2D {
             }
 
             _bmfontScale = newFontSize / _originFontSize;
-            
+
             if (!_lineBreakWithoutSpaces) {
                 this._multilineTextWrapByWord();
             } else {
@@ -561,14 +561,14 @@ export default class BmfontAssembler extends Assembler2D {
         let node = _comp.node;
 
         this.verticesCount = this.indicesCount = 0;
-        
+
         // Need to reset dataLength in Canvas rendering mode.
         this._renderData && (this._renderData.dataLength = 0);
 
         let contentSize = _contentSize,
             appx = node._anchorPoint.x * contentSize.width,
             appy = node._anchorPoint.y * contentSize.height;
-        
+
         let ret = true;
         for (let ctr = 0, l = _string.length; ctr < l; ++ctr) {
             let letterInfo = _lettersInfo[ctr];
@@ -650,7 +650,7 @@ export default class BmfontAssembler extends Assembler2D {
 
     _computeAlignmentOffset () {
         _linesOffsetX.length = 0;
-        
+
         switch (_hAlign) {
             case macro.TextAlignment.LEFT:
                 for (let i = 0; i < _numberOfLines; ++i) {
