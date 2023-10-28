@@ -108,7 +108,9 @@ _proto._children = function (node) {
         if (node._openBatchRender) {
             c._renderFlag |= WORLD_TRANSFORM;
             c._renderFlag &= ~CHILDREN;
-            opacity = c.parent._opacity / 255;
+            if(c.parent) {
+                opacity = c.parent._opacity / 255;
+            }
         }
 
         // Advance the modification of the flag to avoid node attribute modification is invalid when opacity === 0.
