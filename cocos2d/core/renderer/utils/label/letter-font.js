@@ -188,7 +188,9 @@ cc.js.mixin(LetterAtlas.prototype, {
         letter.originH = letterTexture._height;
         letter.hash = letterTexture._hash;
         letter.refCount = 0;
-        _notUsedLetters.push(letter);
+		if (_notUsedLetters.indexOf(letter)==-1){
+		  _notUsedLetters.push(letter);	
+		}
 
         this._fontDefDictionary.addLetterDefinitions(letterTexture._hash, letter);
 
@@ -310,6 +312,7 @@ cc.js.mixin(LetterAtlas.prototype, {
         oldLetter.hash = newLetterTexture._hash;
         oldLetter.w = newLetterTexture._width - bleed;
         oldLetter.h = newLetterTexture._height - bleed;
+		oldLetter.xAdvance = oldLetter.w;
         oldLetter.offsetY = newLetterTexture._offsetY;
         oldLetter.refCount = 0;
 
