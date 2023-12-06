@@ -94,6 +94,7 @@ _proto._children = function (node) {
     let worldDirtyFlag = worldTransformFlag | worldOpacityFlag;
 
     // for drawcall[from wulifun]
+    let _nodeParent = null;
     let children = [];
     if (node._openBatchRender) {
         children = node.batchChildren;
@@ -106,10 +107,14 @@ _proto._children = function (node) {
 
         // for drawcall[from wulifun]
         if (node._openBatchRender) {
-            c._renderFlag |= WORLD_TRANSFORM;
             c._renderFlag &= ~CHILDREN;
-            if(c.parent) {
-                opacity = c.parent._opacity / 255;
+
+            _nodeParent = c._parent;
+            if(_nodeParent) opacity = _nodeParent._opacity / 255;
+            while (_nodeParent) {
+                opacity = Math.min(_nodeParent._opacity / 255, opacity);
+                if (_nodeParent == node) break;
+                _nodeParent = _nodeParent._parent;
             }
         }
 
